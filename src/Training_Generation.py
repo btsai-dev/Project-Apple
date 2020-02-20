@@ -15,8 +15,8 @@ np.random.seed(0)
 
 # Number of dimensions
 D = 2
-L = 1000
-K = 100000
+L = 1
+K = 1000
 
 # Average and standard deviation
 mu_0 = 0
@@ -26,12 +26,17 @@ A_DL = sigma_0 * np.random.randn(D, L) + mu_0;
 sigma_vector = sigma_0 * np.random.randn(D, 1) + mu_0
 
 Y = sigma_0 * np.random.randn(L, 1) + mu_0
-
 Z = np.zeros(shape=(D, 1))
 Z[0, 0] = sigma_vector[0, 0] * np.random.randn() + mu_0
+
 X = np.dot(A_DL, Y) + Z
 X_list = X
 X_cov = np.cov(X.T)
+
+print("A vector is")
+print(A_DL)
+print("Sigma vector is")
+print(sigma_vector)
 
 ##print("X vector is")
 ##print(X)
@@ -39,8 +44,6 @@ X_cov = np.cov(X.T)
 ##print(np.mean(X))
 ##print("\nCovariance of X is")
 ##print(X_cov)
-
-
 
 for k in range(1, K):
     Z = np.zeros(shape=(D, 1))
@@ -66,6 +69,7 @@ for k in range(1, K):
 ##    print(np.mean(X))
 ##    print("\nCovariance of X is")
 ##    print(X_cov)
+        
 if("D == 2"):
     print("Attempting to Plot...")
     plt.xlabel("X1")
@@ -89,6 +93,19 @@ if("D == 2"):
     print("Average X1-value: ", np.mean(X_list[0]))
     print("Average X2-value: ", np.mean(X_list[1]))
 
+
+co_Z = np.zeros(shape=(D,D))
+for i in range(0,D):
+    co_Z[i, i] = sigma_vector[i]
+
+print("Sigma Z is ")
+print(co_Z)
+out = np.dot(A_DL, np.transpose(A_DL)) + co_Z
+print("Resulting A * A.T + S_Z")
+print(out)
+
+print("X combined is")
+print(X_list)
 ##    saveBool = input("Save image (Y/n)? ")
 ##    if(saveBool):
 ##        name = input("Name: ")
