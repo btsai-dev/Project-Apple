@@ -22,7 +22,8 @@ neural_network_dimension = 512
 latent_variable_dimension = 2
 
 def xavier (in_shape):
-    val = tf.random_normal(shape = in_shape , stddev = 1./tf.sqrt(in_shape[0]/2.)) # We want to initialize with values that are neither too small nor too large 
+    # We want to initialize with values that are neither too small nor too large
+    val = tf.random_normal(shape = in_shape , stddev = 1./tf.sqrt(in_shape[0]/2.)) 
     return val
 
 # Weight and bias dictionaries

@@ -1,32 +1,50 @@
+# Import necessary modules
 import numpy as np
 
-D = 20
-L = 10
-K = 20
+import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
+from matplotlib import cm
+
+from scipy.stats import gaussian_kde as kde
+
+from random import seed
+
+# Seed all values to zero
+seed(0)
+np.random.seed(0)
+
+# Number of dimensions
+D = 2
+L = 1000
+K = 100000
+
+# Average and standard deviation
 mu_0 = 0
 sigma_0 = 1
 
 A_DL = sigma_0 * np.random.randn(D, L) + mu_0;
 sigma_vector = sigma_0 * np.random.randn(D, 1) + mu_0
 
-
-
 Y = sigma_0 * np.random.randn(L, 1) + mu_0
+
+Z = np.zeros(shape=(D, 1))
+Z[0, 0] = sigma_vector[0, 0] * np.random.randn() + mu_0
 X = np.dot(A_DL, Y) + Z
 X_list = X
-# X_cov = np.cov(X.T)
+X_cov = np.cov(X.T)
+
 ##print("X vector is")
 ##print(X)
-# print("\nMean value of X is")
-# print(np.mean(X))
-# print("\nCovariance of X is")
-# print(X_cov)
+##print("\nMean value of X is")
+##print(np.mean(X))
+##print("\nCovariance of X is")
+##print(X_cov)
 
 
 
 for k in range(1, K):
     Z = np.zeros(shape=(D, 1))
-    for index in range(0, D):
+    for index in range(1, D):
         Z[index, 0] = sigma_vector[index, 0] * np.random.randn() + mu_0
 
     Y = sigma_0 * np.random.randn(L, 1) + mu_0
@@ -36,89 +54,68 @@ for k in range(1, K):
 ##    print(X)
 ##    print(np.shape(X))
     X_list = np.append(X_list, X, 1)
+
+    if(k % 1000 == 0):
+        print("K = ", k)
 ##    print(np.shape(X_list))
-    # X_list.append(X)
-    # X_cov = np.cov(X.T)
-    # print("X vector is")
-    # print(X)
-    # print("\nMean value of X is")
-    # print(np.mean(X))
-    # print("\nCovariance of X is")
-    # print(X_cov)
+##    X_list.append(X)
+##    X_cov = np.cov(X.T)
+##    print("X vector is")
+##    print(X)
+##    print("\nMean value of X is")
+##    print(np.mean(X))
+##    print("\nCovariance of X is")
+##    print(X_cov)
+if("D == 2"):
+    print("Attempting to Plot...")
+    plt.xlabel("X1")
+    plt.ylabel("X2")
+    densObj = kde( X_list )
 
-print("X_list is")
-print(X_list)
-X_cov = np.cov(X_list)
-print("\nCovariance of X is")
-print(X_cov)
-print(np.shape(X_cov))
-print(np.mean(X_cov, axis=1))
+    def makeColours( vals ):
+        colours = np.zeros( (len(vals),3) )
+        norm = Normalize( vmin=vals.min(), vmax=vals.max() )
 
+        #Can put any colormap you like here.
+        colours = [cm.ScalarMappable( norm=norm, cmap='jet').to_rgba( val ) for val in vals]
 
-Z_Diag = np.zeros(shape=(D,D))
-for index in range(0, D):
-    Z_Diag[index, index] = Z[index, 0]
-
-Alt_cov = np.dot(A_DL, A_DL.T) + Z_Diag
-print("\nAlt Cov is")
-print(Alt_cov)
-print(np.shape(Alt_cov))
-print("\nAlt mean vector is")
-print(np.mean(Alt_cov, axis=1))
-'''
-D = 10
-L = 10
-K = 1
-mu_0 = 0
-sigma_0 = 1
-
-
-# Generating the A_DL Matrix sampled from N(0,1)
-A_DL = np.asmatrix( sigma_0 * np.random.randn(D, L) + mu_0, dtype=np.longdouble )
-
-print("A_DL")
-print(A_DL)
-
-# Generating a vector full of sigmas sampled from N(0, 1)
-sigma_vector = np.asmatrix( sigma_0 * np.random.randn(D, 1) + mu_0, dtype=np.longdouble )
-
-print()
-print("Sigma Vector")
-print(sigma_vector)
-
-    # Generating a vector sampled from N(0, sigma vector value)
-print()
-print("Z Vector")
-print(Z)
-Z_Diag_Cov = np.cov(Z_Diag)
-
-print()
-print("Getting diagonal matrix of the Z vector")
-print(Z_Diag)
-print("Getting covariance matrix of the Z vector")
-print(Z_Diag_Cov)
-
-for k in range(0, K):
-    # X = np.asmatrix(np.zeros(shape=(D,1)), dtype=np.longdouble)
+        return colours
+    colours = makeColours( densObj.evaluate( X_list ) )
+    title = "L = " + str(L) + " K = " + str(K)
+    plt.scatter(X_list[0], X_list[1], color=colours)
+    plt.title(title)
+    plt.show(block=False)
     
-    Y = np.asmatrix( sigma_0 * np.random.randn(L, 1) + mu_0, dtype=np.longdouble )
-    print()
-    print("Y Vector")
-    print(Y)
-    X = A_DL * Y + Z
-    print()
-    print("X Vector")
-    print(X)
-    X_list.append(X)
+    print("Average X1-value: ", np.mean(X_list[0]))
+    print("Average X2-value: ", np.mean(X_list[1]))
 
-    print()
-    print("Covariance matrix of X is")
-    print(np.cov(X))
+##    saveBool = input("Save image (Y/n)? ")
+##    if(saveBool):
+##        name = input("Name: ")
+##        plt.savefig(name)
 
-    
-    Calc = A_DL * A_DL.T + Z_Diag
-    print()
-    print("Covariance calculation from A * A_T + Z")
-    print(Calc)
-'''
-
+##print("X_list is")
+##print(X_list)
+##print("X1 values in X_List")
+##print(X_list[0])
+##print("X2 values in X_List")
+##print(X_list[1])
+##
+##
+##X_cov = np.cov(X_list)
+##print("\nCovariance of X is")
+##print(X_cov)
+##print(np.shape(X_cov))
+##print(np.mean(X_cov, axis=1))
+##
+##
+##Z_Diag = np.zeros(shape=(D,D))
+##for index in range(0, D):
+##    Z_Diag[index, index] = Z[index, 0]
+##
+##Alt_cov = np.dot(A_DL, A_DL.T) + Z_Diag
+##print("\nAlt Cov is")
+##print(Alt_cov)
+##print(np.shape(Alt_cov))
+##print("\nAlt mean vector is")
+##print(np.mean(Alt_cov, axis=1))
