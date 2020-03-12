@@ -68,36 +68,43 @@ seed(0)
 np.random.seed(0)
 
 # Number of dimensions
-D, L, N = 2, 1, 10000
+D, L, N = 2, 1, 1000
 draw = True
 
-##A = generate_A(D, L)
-##sigma = generate_Sigma(D)
-##Y = generate_Sigma(L)
-##X_List = []
-##
-##for n in range(N):
-##    Z = generate_Z(sigma)
-##    X = np.dot(A, Y) + Z
-##    X_List.append(X)
-##
-##X_list = np.array(X_List)
-##print(X_list)
-##print(X_list.shape)
+A = generate_A(D, L)
+sigma = generate_Sigma(D)
+Y = generate_Sigma(L)
+X_List = []
+
+for n in range(N):
+    Z = generate_Z(sigma)
+    X = np.dot(A, Y) + Z
+    X_List.append(X)
+
+X_list = np.array(X_List)
+#
+print(X_list)
+print(X_list.shape)
+X_list = np.reshape(X_list, (N, D))
+print(X_list)
+print(X_list.shape)
+
+
+
 # Average and standard deviation
-mu_0 = 0
-sigma_0 = 1
-
-A_DL = sigma_0 * np.random.randn(D, L) + mu_0;
-sigma_vector = sigma_0 * np.random.randn(D, 1) + mu_0
-
-Y = sigma_0 * np.random.randn(L, 1) + mu_0
-Z = np.zeros(shape=(D, 1))
-Z[0, 0] = sigma_vector[0, 0] * np.random.randn() + mu_0
-
-X = np.dot(A_DL, Y) + Z
-X_list = X
-X_cov = np.cov(X.T)
+##mu_0 = 0
+##sigma_0 = 1
+##
+##A_DL = sigma_0 * np.random.randn(D, L) + mu_0;
+##sigma_vector = sigma_0 * np.random.randn(D, 1) + mu_0
+##
+##Y = sigma_0 * np.random.randn(L, 1) + mu_0
+##Z = np.zeros(shape=(D, 1))
+##Z[0, 0] = sigma_vector[0, 0] * np.random.randn() + mu_0
+##
+##X = np.dot(A_DL, Y) + Z
+##X_list = X
+##X_cov = np.cov(X.T)
 
 ##print("A vector is")
 ##print(A_DL)
@@ -111,32 +118,32 @@ X_cov = np.cov(X.T)
 ##print("\nCovariance of X is")
 ##print(X_cov)
 
-for k in range(1, N):
-    Z = np.zeros(shape=(D, 1))
-    for index in range(1, D):
-        Z[index, 0] = sigma_vector[index, 0] * np.random.randn() + mu_0
+##for k in range(1, N):
+##    Z = np.zeros(shape=(D, 1))
+##    for index in range(1, D):
+##        Z[index, 0] = sigma_vector[index, 0] * np.random.randn() + mu_0
+##
+##    Y = sigma_0 * np.random.randn(L, 1) + mu_0
+##    X = np.dot(A_DL, Y) + Z
+##    X = np.dot(A_DL, Y) + Z
+##    print("X vector is")
+##    print(X)
+##    print(np.shape(X))
+##    X_list = np.append(X_list, X, 1)
+##
+##    if(k % 1000 == 0):
+##        print("K = ", k)
+##    print(np.shape(X_list))
+##    np.append(X_list, X)
+##    X_cov = np.cov(X.T)
+##    print("X vector is")
+##    print(X)
+##    print("\nMean value of X is")
+##    print(np.mean(X))
+##    print("\nCovariance of X is")
+##    print(X_cov)
 
-    Y = sigma_0 * np.random.randn(L, 1) + mu_0
-    X = np.dot(A_DL, Y) + Z
-    X = np.dot(A_DL, Y) + Z
-    print("X vector is")
-    print(X)
-    print(np.shape(X))
-    X_list = np.append(X_list, X, 1)
-
-    if(k % 1000 == 0):
-        print("K = ", k)
-    print(np.shape(X_list))
-    np.append(X_list, X)
-    X_cov = np.cov(X.T)
-    print("X vector is")
-    print(X)
-    print("\nMean value of X is")
-    print(np.mean(X))
-    print("\nCovariance of X is")
-    print(X_cov)
-
-print(X_list.shape)
+##print(X_list.shape)
 if draw:
     if D == 2:
         print("Attempting to Plot 2D")
