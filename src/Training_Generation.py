@@ -1,13 +1,49 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Generates and Analyzes Training Data
+
+
+    PART 1: GENERATION
+    
+    We generate N Gaussian vectors of dimension D whose mean vector is zero,
+    and covariance matrix is A * A.T + Σz, where Σz is a diagonal matrix
+    whose diagonal entries are σ(z,i)².
+
+    The Gaussian vectors are created from the formula X = A*Y+Z.
+        - X is the Gaussian Vector (size D,1) to be generated
+        
+        - A is the matrix (size D,L) generated with each value independently
+            following N(0,1). This matrix will remain constant throughout the
+            entire generation of the X vectors.
+            
+        - Y is the column vector (Size L,1) generated with each value
+            independently following N(0,1). The Y vector will be regenerated
+            each time we want to generate a new X vector.
+            
+        - Z is the column vector (Size D,1) generated with each value
+            independently following N(0,σ(z,i)²). Each value of σ(z,i)² itself
+            independently folows N(0,1). The values of σ(z,i)² will remain
+            constant throughout the entire generation of the X vectors. The
+            Z vector will be regenerated each time we want to generate a new
+            X vector.
+    Notes:
+        - L << D: The latent vector size should be much smaller than the size
+            of the explicit vector size.
+"""
+
+
 # Import necessary modules
+from random import seed
+
 import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
 
 from scipy.stats import gaussian_kde as kde
-
-from random import seed
 
 # Seed all values to zero
 seed(0)
@@ -16,7 +52,9 @@ np.random.seed(0)
 # Number of dimensions
 D = 2
 L = 1
-K = 1000
+K = 2
+draw = False
+
 
 # Average and standard deviation
 mu_0 = 0
@@ -69,43 +107,86 @@ for k in range(1, K):
 ##    print(np.mean(X))
 ##    print("\nCovariance of X is")
 ##    print(X_cov)
+if draw:
+    if D == 2:
+        print("Attempting to Plot 2D")
+        plt.xlabel("X1")
+        plt.ylabel("X2")
+        densObj = kde( X_list )
+
+        def makeColours( vals ):
+            colours = np.zeros( (len(vals),3) )
+            norm = Normalize( vmin=vals.min(), vmax=vals.max() )
+
+            #Can put any colormap you like here.
+            colours = [cm.ScalarMappable( norm=norm, cmap='jet').to_rgba( val ) for val in vals]
+
+            return colours
+        colours = makeColours( densObj.evaluate( X_list ) )
+        title = "L = " + str(L) + " K = " + str(K)
+        plt.scatter(X_list[0], X_list[1], color=colours)
+        plt.title(title)
+        plt.show(block=False)
         
-if("D == 2"):
-    print("Attempting to Plot...")
-    plt.xlabel("X1")
-    plt.ylabel("X2")
-    densObj = kde( X_list )
+        print("Average X1-value: ", np.mean(X_list[0]))
+        print("Average X2-value: ", np.mean(X_list[1]))
 
-    def makeColours( vals ):
-        colours = np.zeros( (len(vals),3) )
-        norm = Normalize( vmin=vals.min(), vmax=vals.max() )
-
-        #Can put any colormap you like here.
-        colours = [cm.ScalarMappable( norm=norm, cmap='jet').to_rgba( val ) for val in vals]
-
-        return colours
-    colours = makeColours( densObj.evaluate( X_list ) )
-    title = "L = " + str(L) + " K = " + str(K)
-    plt.scatter(X_list[0], X_list[1], color=colours)
-    plt.title(title)
-    plt.show(block=False)
-    
-    print("Average X1-value: ", np.mean(X_list[0]))
-    print("Average X2-value: ", np.mean(X_list[1]))
-
+    if D == 3:
+        print("Attempting to Plot 3D")
+        def scatter3d(x,y,z, cs, colorsMap='jet'):
+            cmx = plt.get_cmap(colorsMap)
+            cNorm = matplotlib.colors.Normalize(vmin=min(cs), vmax=max(cs))
+            scalarMap = cm.ScalarMappable(norm=cNorm, cmap=cmx)
+            fig = plt.figure()
+            ax = Axes3D(fig)
+            ax.scatter(x, y, z, c=scalarMap.to_rgba(cs))
+            scalarMap.set_array(cs)
+            fig.colorbar(scalarMap)
+            plt.show(block=False)
+        scatter3d(X_list[0], X_list[1], X_list[2])
 
 co_Z = np.zeros(shape=(D,D))
 for i in range(0,D):
-    co_Z[i, i] = sigma_vector[i]
+    co_Z[i, i] = sigma_vector[i] * sigma_vector[i]
 
 print("Sigma Z is ")
 print(co_Z)
 out = np.dot(A_DL, np.transpose(A_DL)) + co_Z
-print("Resulting A * A.T + S_Z")
-print(out)
 
 print("X combined is")
 print(X_list)
+
+def covert(X_list):
+    total = np.zeros(shape=(D,D))
+    for i in range(0, k):
+        total += (X_list[:,i] - np.mean(X_list[:,i]) * np.transpose(X_list[:,i] - np.mean(X_list[:,i])))
+        ##print(total)
+    total /= (float(k) - 1)
+    return total;
+
+              
+print("\nResulting A * A.T + S_Z")
+print(out)
+print("\nMystefied cov")
+print(covert(X_list))
+print("\nCalculated cov")
+print(np.cov(X_list, rowvar=False))
+
+def generate_Z():
+    return foo;
+
+def generate_A():
+    return foo;
+
+def generate_Y():
+    return foo;
+
+def generate_Sigma():
+    return generate_matrix(0, 1, D, 1)
+
+def generate_matrix(mean, variance, rows, columns):
+    return variance * np.random.randn(rows, columns) + mean
+
 ##    saveBool = input("Save image (Y/n)? ")
 ##    if(saveBool):
 ##        name = input("Name: ")
