@@ -172,17 +172,20 @@ print(covert(X_list))
 print("\nCalculated cov")
 print(np.cov(X_list, rowvar=False))
 
-def generate_Z():
-    return foo;
+def generate_Z(size, sigma_vector):
+    Z = np.zeros(shape=(D, 1))
+    for index in range(1, D):
+        Z[index, 0] = sigma_vector[index, 0] * np.random.randn() + mu_0
+    return Z
 
-def generate_A():
-    return foo;
+def generate_A(rows, columns):
+    return generate_matrix(0, 1, rows, columns)
 
-def generate_Y():
-    return foo;
+def generate_Y(size):
+    return generate_matrix(0, 1, size, 1)
 
-def generate_Sigma():
-    return generate_matrix(0, 1, D, 1)
+def generate_Sigma(size):
+    return generate_matrix(0, 1, size, 1)
 
 def generate_matrix(mean, variance, rows, columns):
     return variance * np.random.randn(rows, columns) + mean
