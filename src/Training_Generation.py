@@ -45,17 +45,45 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from scipy.stats import gaussian_kde as kde
 
+def generate_Z(sigmaVector):
+    Z = np.zeros(shape=(sigmaVector.shape[0], 1))
+    for index in range(1, D):
+        Z[index, 0] = sigmaVector[index, 0] * np.random.randn() + 0
+    return Z
+
+def generate_A(rows, columns):
+    return generate_matrix(0, 1, rows, columns)
+
+def generate_Y(size):
+    return generate_matrix(0, 1, size, 1)
+
+def generate_Sigma(size):
+    return generate_matrix(0, 1, size, 1)
+
+def generate_matrix(mean, variance, rows, columns):
+    return variance * np.random.randn(rows, columns) + mean
+
 # Seed all values to zero
 seed(0)
 np.random.seed(0)
 
 # Number of dimensions
-D = 2
-L = 1
-K = 2
-draw = False
+D, L, N = 2, 1, 10000
+draw = True
 
-
+##A = generate_A(D, L)
+##sigma = generate_Sigma(D)
+##Y = generate_Sigma(L)
+##X_List = []
+##
+##for n in range(N):
+##    Z = generate_Z(sigma)
+##    X = np.dot(A, Y) + Z
+##    X_List.append(X)
+##
+##X_list = np.array(X_List)
+##print(X_list)
+##print(X_list.shape)
 # Average and standard deviation
 mu_0 = 0
 sigma_0 = 1
@@ -71,10 +99,10 @@ X = np.dot(A_DL, Y) + Z
 X_list = X
 X_cov = np.cov(X.T)
 
-print("A vector is")
-print(A_DL)
-print("Sigma vector is")
-print(sigma_vector)
+##print("A vector is")
+##print(A_DL)
+##print("Sigma vector is")
+##print(sigma_vector)
 
 ##print("X vector is")
 ##print(X)
@@ -83,30 +111,32 @@ print(sigma_vector)
 ##print("\nCovariance of X is")
 ##print(X_cov)
 
-for k in range(1, K):
+for k in range(1, N):
     Z = np.zeros(shape=(D, 1))
     for index in range(1, D):
         Z[index, 0] = sigma_vector[index, 0] * np.random.randn() + mu_0
 
     Y = sigma_0 * np.random.randn(L, 1) + mu_0
     X = np.dot(A_DL, Y) + Z
-##    X = np.dot(A_DL, Y) + Z
-##    print("X vector is")
-##    print(X)
-##    print(np.shape(X))
+    X = np.dot(A_DL, Y) + Z
+    print("X vector is")
+    print(X)
+    print(np.shape(X))
     X_list = np.append(X_list, X, 1)
 
     if(k % 1000 == 0):
         print("K = ", k)
-##    print(np.shape(X_list))
-##    X_list.append(X)
-##    X_cov = np.cov(X.T)
-##    print("X vector is")
-##    print(X)
-##    print("\nMean value of X is")
-##    print(np.mean(X))
-##    print("\nCovariance of X is")
-##    print(X_cov)
+    print(np.shape(X_list))
+    np.append(X_list, X)
+    X_cov = np.cov(X.T)
+    print("X vector is")
+    print(X)
+    print("\nMean value of X is")
+    print(np.mean(X))
+    print("\nCovariance of X is")
+    print(X_cov)
+
+print(X_list.shape)
 if draw:
     if D == 2:
         print("Attempting to Plot 2D")
@@ -145,16 +175,16 @@ if draw:
             plt.show(block=False)
         scatter3d(X_list[0], X_list[1], X_list[2])
 
-co_Z = np.zeros(shape=(D,D))
-for i in range(0,D):
-    co_Z[i, i] = sigma_vector[i] * sigma_vector[i]
-
-print("Sigma Z is ")
-print(co_Z)
-out = np.dot(A_DL, np.transpose(A_DL)) + co_Z
-
-print("X combined is")
-print(X_list)
+##co_Z = np.zeros(shape=(D,D))
+##for i in range(0,D):
+##    co_Z[i, i] = sigma_vector[i] * sigma_vector[i]
+##
+##print("Sigma Z is ")
+##print(co_Z)
+##out = np.dot(A_DL, np.transpose(A_DL)) + co_Z
+##
+##print("X combined is")
+##print(X_list)
 
 def covert(X_list):
     total = np.zeros(shape=(D,D))
@@ -164,7 +194,7 @@ def covert(X_list):
     total /= (float(k) - 1)
     return total;
 
-              
+
 print("\nResulting A * A.T + S_Z")
 print(out)
 print("\nMystefied cov")
@@ -172,23 +202,7 @@ print(covert(X_list))
 print("\nCalculated cov")
 print(np.cov(X_list, rowvar=False))
 
-def generate_Z(size, sigma_vector):
-    Z = np.zeros(shape=(D, 1))
-    for index in range(1, D):
-        Z[index, 0] = sigma_vector[index, 0] * np.random.randn() + mu_0
-    return Z
 
-def generate_A(rows, columns):
-    return generate_matrix(0, 1, rows, columns)
-
-def generate_Y(size):
-    return generate_matrix(0, 1, size, 1)
-
-def generate_Sigma(size):
-    return generate_matrix(0, 1, size, 1)
-
-def generate_matrix(mean, variance, rows, columns):
-    return variance * np.random.randn(rows, columns) + mean
 
 ##    saveBool = input("Save image (Y/n)? ")
 ##    if(saveBool):
