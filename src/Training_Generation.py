@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 """Generates and Analyzes Training Data
-
-
     PART 1: GENERATION
     
     We generate N Gaussian vectors of dimension D whose mean vector is zero,
@@ -44,103 +42,104 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from scipy.stats import gaussian_kde as kde
 
-# Seed all values to zero
-seed(0)
-np.random.seed(0)
-
-# Number of dimensions
-D = 2
-L = 1
-N = 10000
 
 def generateIndependentFollowing(mean, variance, rows, columns):
     return variance * np.random.randn(rows, columns) + mean
 
+
 def generateZ(sigmaVector):
     rows = sigmaVector.shape[0]
-    Z = np.zeros( shape=( rows, 1 ) )
+    Z = np.zeros(shape=(rows, 1))
     
     for index in range( 0, rows ):
         Z[index, 0] = sigmaVector[index, 0] * np.random.randn() + 0
     return Z
 
+
 def generateA(row, column):
-    return generateIndependentFollowing( mean=0, variance=1, rows=row, columns=column)
+    return generateIndependentFollowing(mean=0, variance=1, rows=row, columns=column)
+
 
 def generateY(size):
-    return generateIndependentFollowing( mean=0, variance=1, rows=size, columns=1 )
+    return generateIndependentFollowing(mean=0, variance=1, rows=size, columns=1)
+
 
 def generateSigma(size):
-    return generateIndependentFollowing( mean=0, variance=1, rows=size, columns=1 )
+    return generateIndependentFollowing(mean=0, variance=1, rows=size, columns=1)
+
 
 def plot2D(coordinates, L):
-    ##print("Attempting to Plot...")
-    
     plt.figure(-1)
     plt.xlabel("X1")
     plt.ylabel("X2")
-    densObj = kde( coordinates )
+    densobj = kde(coordinates)
 
-    def makeColours( vals ):
-        colours = np.zeros( (len(vals),3) )
+    def makeColors(vals):
         norm = Normalize( vmin=vals.min(), vmax=vals.max() )
+        return [cm.ScalarMappable( norm=norm, cmap='jet').to_rgba(val) for val in vals]
 
-        #Can put any colormap you like here.
-        colours = [cm.ScalarMappable( norm=norm, cmap='jet').to_rgba( val ) for val in vals]
-
-        return colours
-    colours = makeColours( densObj.evaluate( coordinates ) )
-    title = "L = " + str(L) + " N = " + str( coordinates.shape[0])
+    colors = makeColors(densobj.evaluate(coordinates))
+    title = "L = " + str(L) + " N = " + str(coordinates.shape[0])
     
-    plt.scatter(coordinates[0], coordinates[1], color=colours)
+    plt.scatter(coordinates[0], coordinates[1], color=colors)
     plt.title(title)
     plt.show(block=False)
     
-    print("Average X1-value: ", np.mean(xList[0]))
-    print("Average X2-value: ", np.mean(xList[1]))
+    print("Average X1-value: ", np.mean(coordinates[0]))
+    print("Average X2-value: ", np.mean(coordinates[1]))
+
+
+def main():
+    # Seed all values to zero
+    seed(0)
+    np.random.seed(0)
+
+    # Number of dimensions
+    D = 2
+    L = 1
+    N = 100
+
+    Sigma = generateSigma(D)
+    print(np.mean(Sigma))
+
+    A = generateA(D, L)
+    print(np.mean(A))
+
+    xArrayList = np.zeros(shape=(2, 1))
+    xList = []
+
+    for n in range(N):
+        Z = generateZ(Sigma)
+        Y = generateY(L)
+        X = np.dot(A, Y) + Z
+        xList.append(X)
+
+    xMatrix = None
+
+    if D == 2:
+        # Reshape xList to form a 2D matrix
+        xMatrix = np.squeeze(np.array(xList)).T
+
+        # Plot density
+        plot2D(xMatrix, L)
+
+        """Alternatives:
     
-Sigma = generateSigma( D )
-print(np.mean(Sigma))
+        np.squeeze(np.stack(xList, axis=1))
+        np.squeeze(np.stack(xList)).T
+        """
 
-A = generateA( D, L )
-print(np.mean(A))
+        # Plot histogram
+        counter = 0
+        for row in xMatrix:
+            print(row)
+            plt.figure(counter)
+            _ = plt.hist(row, bins='auto')
+            title = "Histogram for X" + str(counter)
+            plt.title(title)
+            plt.show(block=False)
+            counter += 1
 
 
-xArrayList = np.zeros( shape=( 2, 1 ) )
-xList = []
-
-for n in range( N ):
-    Z = generateZ( Sigma )
-    Y = generateY( L )
-    X = np.dot( A, Y ) + Z
-    xList.append(X)
-    
-xMatrix = None
-
-if (D == 2):
-    # Reshape xList to form a 2D matrix
-    xMatrix = np.squeeze(np.array(xList)).T
-
-    # Plot density
-    plot2D(xMatrix, L)
-    
-    """Alternatives:
-
-    np.squeeze(np.stack(xList, axis=1))
-    np.squeeze(np.stack(xList)).T
-    """
-
-    # Plot histogram
-    counter = 0
-    for row in xMatrix:
-        print(row)
-        plt.figure(counter)
-        _ = plt.hist(row, bins='auto')
-        title = "Histogram for X" + str(counter)
-        plt.title(title)
-        plt.show(block=False)
-        counter += 1
-        
-
-    
-    
+if __name__ == '__main__':
+    main()
