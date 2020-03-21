@@ -79,7 +79,7 @@ def plot2D(coordinates, L):
         return [cm.ScalarMappable( norm=norm, cmap='jet').to_rgba(val) for val in vals]
 
     colors = makeColors(densobj.evaluate(coordinates))
-    title = "L = " + str(L) + " N = " + str(coordinates.shape[0])
+    title = "L = " + str(L) + " D = " + str(coordinates.shape[0]) + " L = " + str(coordinates.shape[1])
     
     plt.scatter(coordinates[0], coordinates[1], color=colors)
     plt.title(title)
