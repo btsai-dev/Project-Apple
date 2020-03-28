@@ -34,6 +34,7 @@
 from random import seed
 
 import numpy as np
+import math
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
@@ -44,7 +45,7 @@ from scipy.stats import gaussian_kde as kde
 
 
 def generateIndependentFollowing(mean, variance, rows, columns):
-    return variance * np.random.randn(rows, columns) + mean
+    return math.sqrt(abs(variance)) * np.random.randn(rows, columns) + mean
 
 
 def generateZ(sigmaVector):
@@ -52,7 +53,7 @@ def generateZ(sigmaVector):
     Z = np.zeros(shape=(rows, 1))
     
     for index in range( 0, rows ):
-        Z[index, 0] = sigmaVector[index, 0] * np.random.randn() + 0
+        Z[index, 0] = abs(sigmaVector[index, 0]) * np.random.randn() + 0
     return Z
 
 
@@ -79,7 +80,7 @@ def plot2D(coordinates, L):
         return [cm.ScalarMappable( norm=norm, cmap='jet').to_rgba(val) for val in vals]
 
     colors = makeColors(densobj.evaluate(coordinates))
-    title = "L = " + str(L) + " D = " + str(coordinates.shape[0]) + " L = " + str(coordinates.shape[1])
+    title = "L = " + str(L) + " D = " + str(coordinates.shape[0]) + " N = " + str(coordinates.shape[1])
     
     plt.scatter(coordinates[0], coordinates[1], color=colors)
     plt.title(title)
@@ -91,8 +92,8 @@ def plot2D(coordinates, L):
 
 def main():
     # Seed all values to zero
-    seed(0)
-    np.random.seed(0)
+    seed(100)
+    np.random.seed(100)
 
     # Number of dimensions
     D = 2
@@ -100,7 +101,8 @@ def main():
     N = 100
 
     Sigma = generateSigma(D)
-    print(np.mean(Sigma))
+    print(Sigma)
+    # print(np.mean(Sigma))
 
     A = generateA(D, L)
     print(np.mean(A))
@@ -108,15 +110,61 @@ def main():
     xArrayList = np.zeros(shape=(2, 1))
     xList = []
 
+    co_Z = np.zeros(shape=(D,D))
+    for i in range(0,D):
+        co_Z[i, i] = Sigma[i]*Sigma[i]
+
+    covMatrix = np.dot(A, np.transpose(A)) + co_Z
+    print("Covariance matrix is \n", covMatrix)
+
+    # Come up with estimate of covariance matrix and mean
+
+    xListp = []
+
+    meanVec = np.zeros(shape=(D,))
+        
+    # Generate for each n value
     for n in range(N):
         Z = generateZ(Sigma)
         Y = generateY(L)
         X = np.dot(A, Y) + Z
         xList.append(X)
+        arrGen = np.random.multivariate_normal(mean=meanVec, cov=covMatrix)
+        ##print("Generated arrGen\n", arrGen)
+        xListp.append(arrGen)
+    
+    xListpM = np.squeeze(np.array(xListp)).T
+    print("Shape:\n", xListpM.shape)
+
+    plot2D(xListpM, L)
+    counter = 0
+    for row in xListpM:
+        print(row)
+        plt.figure(counter)
+        _ = plt.hist(row, bins='auto')
+        title = "Histogram for X" + str(counter)
+        plt.title(title)
+        plt.show(block=False)
+        counter += 1
+
+  
+    
+
+##    eigVals, eigVecs = np.linalg.eig(out)
+##    print("Eigenvalues \n", eigVals)
+##    print("Eigenvectors \n", eigVecs)
+    ## cos , -sin
+    ## sin, cos
+
+##    vector = eigVecs[1]
+##    theta = math.atan(vector[0]/vector[1])
+##    print(theta)
+
+    
 
     xMatrix = None
 
-    if D == 2:
+    if D != 2:
         # Reshape xList to form a 2D matrix
         xMatrix = np.squeeze(np.array(xList)).T
 
@@ -139,6 +187,10 @@ def main():
             plt.title(title)
             plt.show(block=False)
             counter += 1
+
+            
+    
+    
 
 
 if __name__ == '__main__':
