@@ -40,7 +40,6 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
-
 from scipy.stats import gaussian_kde as kde
 
 
@@ -108,12 +107,12 @@ def plotDensity2D(coordinates, L):
     densobj = kde(coordinates)
 
     def makeColors(vals):
-        norm = Normalize( vmin=vals.min(), vmax=vals.max() )
-        return [cm.ScalarMappable( norm=norm, cmap='jet').to_rgba(val) for val in vals]
+        norm = Normalize(vmin=vals.min(), vmax=vals.max())
+        return [cm.ScalarMappable(norm=norm, cmap='jet').to_rgba(val) for val in vals]
 
     colors = makeColors(densobj.evaluate(coordinates))
     title = "L = " + str(L) + " D = " + str(coordinates.shape[0]) + " N = " + str(coordinates.shape[1])
-    
+
     plt.scatter(coordinates[0], coordinates[1], color=colors)
     plt.title(title)
     plt.show(block=False)
@@ -162,6 +161,30 @@ def plotHistograms(realizations):
         counter += 1
 
 
+def plotHistogram2D(realizations):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    hist, xedges, yedges = np.histogram2d(realizations[0], realizations[1])
+    plt.title('3D histogram of 2D normally distributed data points')
+    plt.xlabel("$X_1$")
+    plt.ylabel("$X_2$")
+    # Construct arrays for the anchor positions of the bars.
+    # Note: np.meshgrid gives arrays in (ny, nx) so we use 'F' to flatten xpos,
+    # ypos in column-major order. For numpy >= 1.7, we could instead call meshgrid
+    # with indexing='ij'.
+    xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25)
+    xpos = xpos.flatten('F')
+    ypos = ypos.flatten('F')
+    zpos = np.zeros_like(xpos)
+
+    # Construct arrays with the dimensions for the 16 bars.
+    dx = 0.5 * np.ones_like(zpos)
+    dy = dx.copy()
+    dz = hist.flatten()
+    ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color='b', zsort='average')
+    plt.show(block=False)
+
+
 def main():
     # Seed all values to zero
     seed(10)
@@ -182,7 +205,7 @@ def main():
     xListp = []
 
     meanVec = np.zeros(shape=(D,))
-        
+
     # Generate for each n value
     for n in range(N):
         Z = generateZ(Sigma)
@@ -198,12 +221,12 @@ def main():
         plotDensity2D(xListpM, L)
         plotHistograms(xListpM)
 
-#    eigVals, eigVecs = np.linalg.eig(out)
-#    cos , -sin
-#    sin, cos
+    #    eigVals, eigVecs = np.linalg.eig(out)
+    #    cos , -sin
+    #    sin, cos
 
-#    vector = eigVecs[1]
-#    theta = math.atan(vector[0]/vector[1])
+    #    vector = eigVecs[1]
+    #    theta = math.atan(vector[0]/vector[1])
 
     if D == 2:
         # Reshape xList to form a 2D matrix
@@ -216,6 +239,7 @@ def main():
 
         # Plot density
         plotDensity2D(xMatrix, L)
+        plotHistogram2D(xMatrix)
 
         # Plot histogram
         plotHistograms(xMatrix)
