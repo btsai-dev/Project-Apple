@@ -103,8 +103,8 @@ def plotDensity2D(coordinates, L):
     :return: None
     """
     plt.figure(-1)
-    plt.xlabel("X1")
-    plt.ylabel("X2")
+    plt.xlabel("$X_1$")
+    plt.ylabel("$X_2$")
     densobj = kde(coordinates)
 
     def makeColors(vals):
@@ -117,9 +117,6 @@ def plotDensity2D(coordinates, L):
     plt.scatter(coordinates[0], coordinates[1], color=colors)
     plt.title(title)
     plt.show(block=False)
-    
-    print("Average X1-value: ", np.mean(coordinates[0]))
-    print("Average X2-value: ", np.mean(coordinates[1]))
 
 
 def plotDensity3D(coordinates):
@@ -150,6 +147,11 @@ def generateCovarianceMatrix(A, Sigma):
 
 
 def plotHistograms(realizations):
+    """
+    Plots histograms from realizations. D histograms will be plotted.
+    :param realizations: D x N numpy array
+    :return: None
+    """
     counter = 1
     for variable in realizations:
         plt.figure(counter)
@@ -162,25 +164,19 @@ def plotHistograms(realizations):
 
 def main():
     # Seed all values to zero
-    seed(100)
-    np.random.seed(100)
+    seed(10)
 
     # Number of dimensions
     D = 2
     L = 1
-    N = 100
+    N = 1000
 
     Sigma = generateSigma(D)
-    print(Sigma)
-    # print(np.mean(Sigma))
-
     A = generateA(D, L)
-    print(np.mean(A))
 
     xList = []
 
     covMatrix = generateCovarianceMatrix(A, Sigma)
-    print(covMatrix)
     # Come up with estimate of covariance matrix and mean
 
     xListp = []
@@ -198,25 +194,20 @@ def main():
 
     if D != 2:
         xListpM = np.squeeze(np.array(xListp)).T
-        print("Shape:\n", xListpM.shape)
 
         plotDensity2D(xListpM, L)
         plotHistograms(xListpM)
 
 #    eigVals, eigVecs = np.linalg.eig(out)
-#    print("Eigenvalues \n", eigVals)
-#    print("Eigenvectors \n", eigVecs)
 #    cos , -sin
 #    sin, cos
 
 #    vector = eigVecs[1]
 #    theta = math.atan(vector[0]/vector[1])
-#    print(theta)
 
     if D == 2:
         # Reshape xList to form a 2D matrix
         xMatrix = np.squeeze(np.array(xList)).T
-        print(xMatrix.shape)
 
         """Alternatives:    
         np.squeeze(np.stack(xList, axis=1))
