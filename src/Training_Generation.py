@@ -45,31 +45,63 @@ from scipy.stats import gaussian_kde as kde
 
 
 def generateIndependentFollowing(mean, variance, rows, columns):
+    """
+    Returns a numpy array following the Gaussian N(mean, variance)
+    :param mean: mean of the Guassian to be sampled from
+    :param variance: variance of the Gaussian to be sampled from
+    :param rows: number of rows
+    :param columns: number of columns
+    :return numpy array
+    """
     return math.sqrt(abs(variance)) * np.random.randn(rows, columns) + mean
 
 
-def generateZ(sigmaVector):
-    rows = sigmaVector.shape[0]
-    Z = np.zeros(shape=(rows, 1))
-    
-    for index in range( 0, rows ):
-        Z[index, 0] = abs(sigmaVector[index, 0]) * np.random.randn() + 0
+def generateZ(sigmaVec):
+    """
+    Returns D entries of D independent Gaussian following a normal distribution
+    mean = 0 and whose standard deviation is a parameter.
+    :param sigmaVec: Standard deviations following Gaussian N(0,1)
+    :return: numpy array
+    """
+    Z = abs(sigmaVec) * np.random.randn(sigmaVec.shape[0], 1)
     return Z
 
 
 def generateA(row, column):
+    """
+    Returns a vector of size D x L following the Gaussian N(0,1)
+    :param row: Number of rows (D)
+    :param column: Number of columns (L)
+    :return: numpy array
+    """
     return generateIndependentFollowing(mean=0, variance=1, rows=row, columns=column)
 
 
 def generateY(size):
+    """
+    Returns a vector of size L following Gaussian N(0,1)
+    :param size: Number of rows (L)
+    :return: numpy array
+    """
     return generateIndependentFollowing(mean=0, variance=1, rows=size, columns=1)
 
 
 def generateSigma(size):
+    """
+    Returns a vector of standard deviations following Gaussian N(0,1)
+    :param size: Size of the sigma vector to be generated
+    :return: numpy array
+    """
     return generateIndependentFollowing(mean=0, variance=1, rows=size, columns=1)
 
 
-def plot2D(coordinates, L):
+def plotDensity2D(coordinates, L):
+    """
+    Plots a 2D density plot
+    :param coordinates: 2D numpy array
+    :param L: Size of latent vector
+    :return: None
+    """
     plt.figure(-1)
     plt.xlabel("X1")
     plt.ylabel("X2")
@@ -90,6 +122,30 @@ def plot2D(coordinates, L):
     print("Average X2-value: ", np.mean(coordinates[1]))
 
 
+def generateCovarianceMatrix(A, Sigma):
+    """
+    Generates a covariance matrix using formula A * A.T + Sigma_Z, with Sigma_Z
+    being a diagonal matrix with the genrated Sigma values squared.
+    :param A: Matrix to generate covariance from
+    :param Sigma: Vector of standard deviations
+    :return: Numpy array
+    """
+    co_Z = np.diag(np.ndarray.flatten(np.square(Sigma)))
+    return np.dot(A, np.transpose(A)) + co_Z
+
+
+def plotHistogram2D(matrix):
+    counter = 1
+    for row in matrix:
+        print(row)
+        plt.figure(counter)
+        _ = plt.hist(row, bins='auto')
+        title = "Histogram for X" + str(counter)
+        plt.title(title)
+        plt.show(block=False)
+        counter += 1
+
+
 def main():
     # Seed all values to zero
     seed(100)
@@ -107,16 +163,10 @@ def main():
     A = generateA(D, L)
     print(np.mean(A))
 
-    xArrayList = np.zeros(shape=(2, 1))
     xList = []
 
-    co_Z = np.zeros(shape=(D,D))
-    for i in range(0,D):
-        co_Z[i, i] = Sigma[i]*Sigma[i]
-
-    covMatrix = np.dot(A, np.transpose(A)) + co_Z
-    print("Covariance matrix is \n", covMatrix)
-
+    covMatrix = generateCovarianceMatrix(A, Sigma)
+    print(covMatrix)
     # Come up with estimate of covariance matrix and mean
 
     xListp = []
@@ -130,67 +180,39 @@ def main():
         X = np.dot(A, Y) + Z
         xList.append(X)
         arrGen = np.random.multivariate_normal(mean=meanVec, cov=covMatrix)
-        ##print("Generated arrGen\n", arrGen)
         xListp.append(arrGen)
-    
-    xListpM = np.squeeze(np.array(xListp)).T
-    print("Shape:\n", xListpM.shape)
-
-    plot2D(xListpM, L)
-    counter = 0
-    for row in xListpM:
-        print(row)
-        plt.figure(counter)
-        _ = plt.hist(row, bins='auto')
-        title = "Histogram for X" + str(counter)
-        plt.title(title)
-        plt.show(block=False)
-        counter += 1
-
-  
-    
-
-##    eigVals, eigVecs = np.linalg.eig(out)
-##    print("Eigenvalues \n", eigVals)
-##    print("Eigenvectors \n", eigVecs)
-    ## cos , -sin
-    ## sin, cos
-
-##    vector = eigVecs[1]
-##    theta = math.atan(vector[0]/vector[1])
-##    print(theta)
-
-    
-
-    xMatrix = None
 
     if D != 2:
+        xListpM = np.squeeze(np.array(xListp)).T
+        print("Shape:\n", xListpM.shape)
+
+        plotDensity2D(xListpM, L)
+        plotHistogram2D(xListpM)
+
+#    eigVals, eigVecs = np.linalg.eig(out)
+#    print("Eigenvalues \n", eigVals)
+#    print("Eigenvectors \n", eigVecs)
+#    cos , -sin
+#    sin, cos
+
+#    vector = eigVecs[1]
+#    theta = math.atan(vector[0]/vector[1])
+#    print(theta)
+
+    if D == 2:
         # Reshape xList to form a 2D matrix
         xMatrix = np.squeeze(np.array(xList)).T
 
-        # Plot density
-        plot2D(xMatrix, L)
-
-        """Alternatives:
-    
+        """Alternatives:    
         np.squeeze(np.stack(xList, axis=1))
         np.squeeze(np.stack(xList)).T
         """
 
-        # Plot histogram
-        counter = 0
-        for row in xMatrix:
-            print(row)
-            plt.figure(counter)
-            _ = plt.hist(row, bins='auto')
-            title = "Histogram for X" + str(counter)
-            plt.title(title)
-            plt.show(block=False)
-            counter += 1
+        # Plot density
+        plotDensity2D(xMatrix, L)
 
-            
-    
-    
+        # Plot histogram
+        plotHistogram2D(xMatrix)
 
 
 if __name__ == '__main__':
