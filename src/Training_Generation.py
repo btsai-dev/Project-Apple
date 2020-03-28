@@ -122,6 +122,21 @@ def plotDensity2D(coordinates, L):
     print("Average X2-value: ", np.mean(coordinates[1]))
 
 
+def plotDensity3D(coordinates):
+    """
+    Plots a 3D density plot
+    :param coordinates: 3D numpy array
+    :return: None
+    """
+    fig = plt.figure(-1)
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(coordinates[0], coordinates[1], coordinates[2])
+    ax.set_xlabel('$X_1$')
+    ax.set_ylabel('$X_2$')
+    ax.set_zlabel('$X_3$')
+    plt.show(block=False)
+
+
 def generateCovarianceMatrix(A, Sigma):
     """
     Generates a covariance matrix using formula A * A.T + Sigma_Z, with Sigma_Z
@@ -134,14 +149,13 @@ def generateCovarianceMatrix(A, Sigma):
     return np.dot(A, np.transpose(A)) + co_Z
 
 
-def plotHistogram2D(matrix):
+def plotHistograms(realizations):
     counter = 1
-    for row in matrix:
-        print(row)
+    for variable in realizations:
         plt.figure(counter)
-        _ = plt.hist(row, bins='auto')
-        title = "Histogram for X" + str(counter)
-        plt.title(title)
+        _ = plt.hist(variable, bins='auto')
+        title = "$X_{var:d}$ histogram"
+        plt.title(title.format(var=counter))
         plt.show(block=False)
         counter += 1
 
@@ -187,7 +201,7 @@ def main():
         print("Shape:\n", xListpM.shape)
 
         plotDensity2D(xListpM, L)
-        plotHistogram2D(xListpM)
+        plotHistograms(xListpM)
 
 #    eigVals, eigVecs = np.linalg.eig(out)
 #    print("Eigenvalues \n", eigVals)
@@ -202,6 +216,7 @@ def main():
     if D == 2:
         # Reshape xList to form a 2D matrix
         xMatrix = np.squeeze(np.array(xList)).T
+        print(xMatrix.shape)
 
         """Alternatives:    
         np.squeeze(np.stack(xList, axis=1))
@@ -212,7 +227,7 @@ def main():
         plotDensity2D(xMatrix, L)
 
         # Plot histogram
-        plotHistogram2D(xMatrix)
+        plotHistograms(xMatrix)
 
 
 if __name__ == '__main__':
