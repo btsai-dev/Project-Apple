@@ -31,7 +31,7 @@
 """
 
 # Import necessary modules
-from random import seed
+import random
 
 import numpy as np
 import math
@@ -94,6 +94,10 @@ def generateSigma(size):
     return generateIndependentFollowing(mean=0, variance=1, rows=size, columns=1)
 
 
+def retrieveScale(coordinates):
+    return math.ceil(max(np.amax(coordinates), abs(np.amin(coordinates))))
+
+
 def plotDensity2D(coordinates, L):
     """
     Plots a 2D density plot
@@ -102,8 +106,8 @@ def plotDensity2D(coordinates, L):
     :return: None
     """
     plt.figure(-1)
-    plt.xlabel("$X_1$")
-    plt.ylabel("$X_2$")
+    plt.xlabel('$X_1$')
+    plt.ylabel('$X_2$')
     densobj = kde(coordinates)
 
     def makeColors(vals):
@@ -111,9 +115,18 @@ def plotDensity2D(coordinates, L):
         return [cm.ScalarMappable(norm=norm, cmap='jet').to_rgba(val) for val in vals]
 
     colors = makeColors(densobj.evaluate(coordinates))
-    title = "L = " + str(L) + " D = " + str(coordinates.shape[0]) + " N = " + str(coordinates.shape[1])
+
+    title = "L = " + str(L) + " " + \
+            "D = " + str(coordinates.shape[0]) + " " + \
+            "N = " + str(coordinates.shape[1])
 
     plt.scatter(coordinates[0], coordinates[1], color=colors)
+
+    scale = retrieveScale(coordinates)
+    plt.xlim(-scale, scale)
+    plt.ylim(-scale, scale)
+    plt.gca().set_aspect('equal', adjustable='box')
+
     plt.title(title)
     plt.show(block=False)
 
@@ -125,7 +138,7 @@ def plotDensity3D(coordinates):
     :return: None
     """
     fig = plt.figure(-1)
-    ax = fig.add_subplot(111, projection='3d')
+    ax = fig.add_subplot(111, projection=Axes3D.name)
     ax.scatter(coordinates[0], coordinates[1], coordinates[2])
     ax.set_xlabel('$X_1$')
     ax.set_ylabel('$X_2$')
@@ -157,40 +170,70 @@ def plotHistograms(realizations):
         _ = plt.hist(variable, bins='auto')
         title = "$X_{var:d}$ histogram"
         plt.title(title.format(var=counter))
+        scale = retrieveScale(realizations)
+
+        plt.xlim(-scale, scale)
+
         plt.show(block=False)
         counter += 1
 
 
 def plotHistogram2D(realizations):
     fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+    ax = fig.add_subplot(111, projection=Axes3D.name)
     hist, xedges, yedges = np.histogram2d(realizations[0], realizations[1])
-    plt.title('3D histogram of 2D normally distributed data points')
-    plt.xlabel("$X_1$")
-    plt.ylabel("$X_2$")
+    plt.title("3D histogram of 2D normally distributed data points")
+    plt.xlabel('$X_1$')
+    plt.ylabel('$X_2$')
     # Construct arrays for the anchor positions of the bars.
     # Note: np.meshgrid gives arrays in (ny, nx) so we use 'F' to flatten xpos,
     # ypos in column-major order. For numpy >= 1.7, we could instead call meshgrid
     # with indexing='ij'.
+
     xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25)
     xpos = xpos.flatten('F')
     ypos = ypos.flatten('F')
     zpos = np.zeros_like(xpos)
+    scale = retrieveScale(realizations)
+    ax.set_xlim(-scale, scale)
+    ax.set_ylim(-scale, scale)
 
     # Construct arrays with the dimensions for the 16 bars.
     dx = 0.5 * np.ones_like(zpos)
     dy = dx.copy()
     dz = hist.flatten()
-    ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color='b', zsort='average')
+
+    ax.bar3d(xpos, ypos, zpos, dx, dy, dz,
+             color=np.random.rand(3,),
+             zsort='average',
+             edgecolor='k',
+             linewidth=0.5)
+
     plt.show(block=False)
+
+
+def rotationAngle(cov, radian=True):
+    """
+    Calculates the rotation angle
+    :param cov: Covariance matrix to be used
+    :param radian: Determines if return value should be in radians or degrees
+    :return: Angle in radians or degrees
+    """
+    _, eigVecs = np.linalg.eig(cov)
+    vector = eigVecs[1]
+    if radian:
+        return math.atan(vector[0]/vector[1])
+    else:
+        return math.atan(vector[0]/vector[1]) * 180 / math.pi
 
 
 def main():
     # Seed all values to zero
-    seed(10)
+    random.seed(0)
+    np.random.seed(0)
 
     # Number of dimensions
-    D = 2
+    D = 3
     L = 1
     N = 1000
 
@@ -204,44 +247,33 @@ def main():
 
     xListp = []
 
-    meanVec = np.zeros(shape=(D,))
-
     # Generate for each n value
     for n in range(N):
         Z = generateZ(Sigma)
         Y = generateY(L)
         X = np.dot(A, Y) + Z
         xList.append(X)
-        arrGen = np.random.multivariate_normal(mean=meanVec, cov=covMatrix)
+        arrGen = np.random.multivariate_normal(mean=np.zeros(shape=(D,)), cov=covMatrix)
         xListp.append(arrGen)
 
-    if D != 2:
+    if D == 2:
         xListpM = np.squeeze(np.array(xListp)).T
 
         plotDensity2D(xListpM, L)
         plotHistograms(xListpM)
 
-    #    eigVals, eigVecs = np.linalg.eig(out)
-    #    cos , -sin
-    #    sin, cos
-
-    #    vector = eigVecs[1]
-    #    theta = math.atan(vector[0]/vector[1])
-
+    xMatrix = np.squeeze(np.array(xList)).T
     if D == 2:
-        # Reshape xList to form a 2D matrix
-        xMatrix = np.squeeze(np.array(xList)).T
-
         """Alternatives:    
         np.squeeze(np.stack(xList, axis=1))
         np.squeeze(np.stack(xList)).T
         """
-
-        # Plot density
         plotDensity2D(xMatrix, L)
         plotHistogram2D(xMatrix)
+        plotHistograms(xMatrix)
 
-        # Plot histogram
+    if D == 3:
+        plotDensity3D(xMatrix)
         plotHistograms(xMatrix)
 
 
