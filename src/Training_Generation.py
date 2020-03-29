@@ -241,6 +241,10 @@ def covEigenValues(cov):
     return np.linalg.eig(cov)[0]
 
 
+def calcFrobeniusNorm(theoretical, empirical):
+    return np.linalg.norm(empirical - theoretical, ord='fro')
+
+
 def main():
     # Seed all values to zero
     random.seed(0)
