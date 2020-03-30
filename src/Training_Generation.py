@@ -251,7 +251,7 @@ def main():
     np.random.seed(0)
 
     # Debugging Parameters
-    plotting = True
+    plotting = False
 
     # Number of dimensions
     D = 3
@@ -304,6 +304,7 @@ def main():
     print("Empirical Angle (Deg):\n", getRotationFromCov(covEmpirical, radian=False))
     print("Theoretical Eigenvalues:\n", covEigenValues(covTheoretical))
     print("Theoretical Eigenvalues:\n", covEigenValues(covEmpirical))
+    print("Frobenius Norm:\n", calcFrobeniusNorm(covTheoretical, covEmpirical))
 
 
 if __name__ == '__main__':
