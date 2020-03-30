@@ -130,3 +130,5 @@ dmypy.json
 .idea/inspectionProfiles/profiles_settings.xml
 .idea/Generate-Data.iml
 .idea/workspace.xml
+
+.idea/

@@ -98,14 +98,14 @@ def retrieveScale(coordinates):
     return math.ceil(max(np.amax(coordinates), abs(np.amin(coordinates))))
 
 
-def plotDensity2D(coordinates, L):
+def plotDensity2D(coordinates, title="2D Graph"):
     """
     Plots a 2D density plot
     :param coordinates: 2D numpy array
-    :param L: Size of latent vector
+    :param title: Title of graph
     :return: None
     """
-    plt.figure(-1)
+    plt.figure()
     plt.xlabel('$X_1$')
     plt.ylabel('$X_2$')
     densobj = kde(coordinates)
@@ -115,10 +115,6 @@ def plotDensity2D(coordinates, L):
         return [cm.ScalarMappable(norm=norm, cmap='jet').to_rgba(val) for val in vals]
 
     colors = makeColors(densobj.evaluate(coordinates))
-
-    title = "L = " + str(L) + " " + \
-            "D = " + str(coordinates.shape[0]) + " " + \
-            "N = " + str(coordinates.shape[1])
 
     plt.scatter(coordinates[0], coordinates[1], color=colors)
 
@@ -131,31 +127,21 @@ def plotDensity2D(coordinates, L):
     plt.show(block=False)
 
 
-def plotDensity3D(coordinates):
+def plotDensity3D(coordinates, title="3D Graph"):
     """
     Plots a 3D density plot
     :param coordinates: 3D numpy array
+    :param title: Title of graph
     :return: None
     """
-    fig = plt.figure(-1)
+    fig = plt.figure()
     ax = fig.add_subplot(111, projection=Axes3D.name)
     ax.scatter(coordinates[0], coordinates[1], coordinates[2])
     ax.set_xlabel('$X_1$')
     ax.set_ylabel('$X_2$')
     ax.set_zlabel('$X_3$')
+    plt.title = title
     plt.show(block=False)
-
-
-def generateCovarianceMatrix(A, Sigma):
-    """
-    Generates a covariance matrix using formula A * A.T + Sigma_Z, with Sigma_Z
-    being a diagonal matrix with the genrated Sigma values squared.
-    :param A: Matrix to generate covariance from
-    :param Sigma: Vector of standard deviations
-    :return: Numpy array
-    """
-    co_Z = np.diag(np.ndarray.flatten(np.square(Sigma)))
-    return np.dot(A, np.transpose(A)) + co_Z
 
 
 def plotHistograms(realizations):
@@ -166,7 +152,7 @@ def plotHistograms(realizations):
     """
     counter = 1
     for variable in realizations:
-        plt.figure(counter)
+        plt.figure()
         _ = plt.hist(variable, bins='auto')
         title = "$X_{var:d}$ histogram"
         plt.title(title.format(var=counter))
@@ -212,25 +198,60 @@ def plotHistogram2D(realizations):
     plt.show(block=False)
 
 
-def rotationAngle(cov, radian=True):
+def getRotationFromCov(cov, radian=True):
     """
     Calculates the rotation angle
     :param cov: Covariance matrix to be used
     :param radian: Determines if return value should be in radians or degrees
     :return: Angle in radians or degrees
     """
-    _, eigVecs = np.linalg.eig(cov)
-    vector = eigVecs[1]
+    eigVals, eigVecs = np.linalg.eig(cov)
+    rotationMatrix = np.dot(np.diag(np.ndarray.flatten(eigVals)), np.linalg.inv(cov))
+    vector = rotationMatrix[1]
+
     if radian:
         return math.atan(vector[0]/vector[1])
     else:
         return math.atan(vector[0]/vector[1]) * 180 / math.pi
 
 
+def theoreticalCovMatrix(A, Sigma):
+    """
+    Generates a covariance matrix using formula A * A.T + Sigma_Z, with Sigma_Z
+    being a diagonal matrix with the genrated Sigma values squared.
+    :param A: Matrix to generate covariance from
+    :param Sigma: Vector of standard deviations
+    :return: Numpy array
+    """
+    co_Z = np.diag(np.ndarray.flatten(np.square(Sigma)))
+    return np.dot(A, np.transpose(A)) + co_Z
+
+
+def empiricalCovMatrix(data):
+    dim, size = data.shape
+    meanVec = np.mean(data, axis=1, dtype=np.float64).reshape(-1, 1)
+
+    cov = np.zeros(shape=(dim, dim), dtype=np.float64)
+    for k in range(size):
+        cov += np.dot(data[:, k].reshape(-1, 1) - meanVec, (data[:, k].reshape(-1, 1) - meanVec).T)
+    return cov * (1 / (size - 1))
+
+
+def covEigenValues(cov):
+    return np.linalg.eig(cov)[0]
+
+
+def calcFrobeniusNorm(theoretical, empirical):
+    return np.linalg.norm(empirical - theoretical, ord='fro')
+
+
 def main():
     # Seed all values to zero
     random.seed(0)
     np.random.seed(0)
+
+    # Debugging Parameters
+    plotting = False
 
     # Number of dimensions
     D = 3
@@ -242,7 +263,7 @@ def main():
 
     xList = []
 
-    covMatrix = generateCovarianceMatrix(A, Sigma)
+    covTheoretical = theoreticalCovMatrix(A, Sigma)
     # Come up with estimate of covariance matrix and mean
 
     xListp = []
@@ -253,28 +274,37 @@ def main():
         Y = generateY(L)
         X = np.dot(A, Y) + Z
         xList.append(X)
-        arrGen = np.random.multivariate_normal(mean=np.zeros(shape=(D,)), cov=covMatrix)
+
+        arrGen = np.random.multivariate_normal(mean=np.zeros(shape=(D,)), cov=covTheoretical)
         xListp.append(arrGen)
 
-    if D == 2:
-        xListpM = np.squeeze(np.array(xListp)).T
+    xList = np.squeeze(np.array(xList)).T
+    xListp = np.squeeze(np.array(xListp)).T
 
-        plotDensity2D(xListpM, L)
-        plotHistograms(xListpM)
+    covEmpirical = empiricalCovMatrix(xList)
 
-    xMatrix = np.squeeze(np.array(xList)).T
-    if D == 2:
-        """Alternatives:    
-        np.squeeze(np.stack(xList, axis=1))
-        np.squeeze(np.stack(xList)).T
-        """
-        plotDensity2D(xMatrix, L)
-        plotHistogram2D(xMatrix)
-        plotHistograms(xMatrix)
+    if plotting:
+        if D == 2:
+            plotDensity2D(xList, title="Empirical 2D Plotting")
+            # plotHistogram2D(xList)
+            # plotHistograms(xList)
 
-    if D == 3:
-        plotDensity3D(xMatrix)
-        plotHistograms(xMatrix)
+            plotDensity2D(xListp, title="Generated from Covariance Matrix")
+            # plotHistograms(xListp)
+
+        if D == 3:
+            plotDensity3D(xList, title="Empirical 3D Plotting")
+            # plotHistograms(xList)
+            plotDensity3D(xListp, title="Generated from Covariance Matrix")
+            # plotHistograms(xListp)
+
+    print("Theoretical Cov matrix:\n", covTheoretical)
+    print("Empirical Cov matrix:\n", covEmpirical)
+    print("Theoretical Angle (Deg):\n", getRotationFromCov(covTheoretical, radian=False))
+    print("Empirical Angle (Deg):\n", getRotationFromCov(covEmpirical, radian=False))
+    print("Theoretical Eigenvalues:\n", covEigenValues(covTheoretical))
+    print("Theoretical Eigenvalues:\n", covEigenValues(covEmpirical))
+    print("Frobenius Norm:\n", calcFrobeniusNorm(covTheoretical, covEmpirical))
 
 
 if __name__ == '__main__':
