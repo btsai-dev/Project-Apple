@@ -286,17 +286,17 @@ def main():
     if plotting:
         if D == 2:
             plotDensity2D(xList, title="Empirical 2D Plotting")
-            # plotHistogram2D(xList)
-            # plotHistograms(xList)
+            plotHistogram2D(xList)
+            plotHistograms(xList)
 
             plotDensity2D(xListp, title="Generated from Covariance Matrix")
-            # plotHistograms(xListp)
+            plotHistograms(xListp)
 
         if D == 3:
             plotDensity3D(xList, title="Empirical 3D Plotting")
-            # plotHistograms(xList)
+            plotHistograms(xList)
             plotDensity3D(xListp, title="Generated from Covariance Matrix")
-            # plotHistograms(xListp)
+            plotHistograms(xListp)
 
     print("Theoretical Cov matrix:\n", covTheoretical)
     print("Empirical Cov matrix:\n", covEmpirical)
