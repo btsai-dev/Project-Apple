@@ -288,6 +288,7 @@ def main():
     random.seed(0)
     np.random.seed(0)
 
+
     # Debugging Parameters
     plotting = False
 
@@ -320,7 +321,7 @@ def main():
     covMean = np.reshape(getMeanVector(xList), newshape=(D,))
     print(covMean)
     for n in range(N):
-        arrGen = np.random.multivariate_normal(mean=covMean, cov=covEmpirical)
+        arrGen = np.random.multivariate_normal(mean=covMean, cov=covEmpirical)  
         xListp.append(arrGen)
 
     
