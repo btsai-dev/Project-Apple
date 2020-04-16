@@ -42,6 +42,7 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.stats import gaussian_kde as kde
 
+import pyper as pr
 
 def generateIndependentFollowing(mean, variance, rows, columns):
     """
@@ -279,6 +280,11 @@ def main():
         xListp.append(arrGen)
 
     xList = np.squeeze(np.array(xList)).T
+
+
+
+
+    
     xListp = np.squeeze(np.array(xListp)).T
 
     covEmpirical = empiricalCovMatrix(xList)
@@ -305,6 +311,9 @@ def main():
     print("Theoretical Eigenvalues:\n", covEigenValues(covTheoretical))
     print("Theoretical Eigenvalues:\n", covEigenValues(covEmpirical))
     print("Frobenius Norm:\n", calcFrobeniusNorm(covTheoretical, covEmpirical))
+
+    #r = pr.R()
+
 
 
 if __name__ == '__main__':
