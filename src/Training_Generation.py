@@ -33,10 +33,9 @@
 # Import necessary modules
 import random
 import traceback
-
-import numpy as np
 import math
 
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib import cm
@@ -68,12 +67,12 @@ def getRunningR():
     
 
 def calculateKSTest(r, dataset):
-    print(dataset)
-    print(dataset.shape[0])
-    print(dataset.shape[1])
+    # print(dataset)
+    # print(dataset.shape[0])
+    # print(dataset.shape[1])
     r.assign('dataset', dataset)
     r.assign('columns', dataset.shape[1])
-    print("Completed assignment.")
+    print("Calculating, please wait.")
     print(r('result <- KStest(object=dataset, group=c( rep(1,columns/2),rep(2,columns/2) ))'))
     return r.get('result')
 
@@ -280,6 +279,10 @@ def calcFrobeniusNorm(theoretical, empirical):
     return np.linalg.norm(empirical - theoretical, ord='fro')
 
 
+def getMeanVector(matrix):
+    return np.mean(matrix, axis=1)
+
+
 def main():
     # Seed all values to zero
     random.seed(0)
@@ -289,7 +292,7 @@ def main():
     plotting = False
 
     # Number of dimensions
-    D = 3
+    D = 2
     L = 1
     N = 1000
 
@@ -309,15 +312,23 @@ def main():
         Y = generateY(L)
         X = np.dot(A, Y) + Z
         xList.append(X)
-
-        arrGen = np.random.multivariate_normal(mean=np.zeros(shape=(D,)), cov=covTheoretical)
-        xListp.append(arrGen)
-
+        
     xList = np.squeeze(np.array(xList)).T
-    
-    xListp = np.squeeze(np.array(xListp)).T
+    # print(xList)
 
     covEmpirical = empiricalCovMatrix(xList)
+    covMean = np.reshape(getMeanVector(xList), newshape=(D,))
+    print(covMean)
+    for n in range(N):
+        arrGen = np.random.multivariate_normal(mean=covMean, cov=covEmpirical)
+        xListp.append(arrGen)
+
+    
+    xListp = np.squeeze(np.array(xListp)).T
+    xListc = np.concatenate((xList, xListp), axis=1)
+    # print(xListp)
+    print(xListc)
+    
 
     if plotting:
         if D == 2:
@@ -345,7 +356,7 @@ def main():
     print("Getting a working R instance")
     r = getRunningR()
     print("Calculating KS Test")
-    KS = calculateKSTest(r, xList)
+    KS = calculateKSTest(r, xListc)
     print(KS)
 
 
