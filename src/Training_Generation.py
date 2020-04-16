@@ -32,6 +32,7 @@
 
 # Import necessary modules
 import random
+import traceback
 
 import numpy as np
 import math
@@ -42,7 +43,40 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.stats import gaussian_kde as kde
 
-import pyper as pr
+
+def getRunningR():
+    r = None
+    try:
+        import pyper as pr
+        r = pr.R()
+        r.has_numpy = True
+        r.has_pandas = False
+        r.run('if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")')
+        r('BiocManager::install("GSAR")')
+        r('library(GSAR)')
+        r('library(MASS)')
+        print("Loaded libraries")
+        return r
+    except ImportError:
+        print("Import error, likely pyper not installed.")
+        traceback.print_exc()
+    except:
+        print("Some other error.")
+        traceback.print_exc()
+    finally:
+        return r
+    
+
+def calculateKSTest(r, dataset):
+    print(dataset)
+    print(dataset.shape[0])
+    print(dataset.shape[1])
+    r.assign('dataset', dataset)
+    r.assign('columns', dataset.shape[1])
+    print("Completed assignment.")
+    print(r('result <- KStest(object=dataset, group=c( rep(1,columns/2),rep(2,columns/2) ))'))
+    return r.get('result')
+
 
 def generateIndependentFollowing(mean, variance, rows, columns):
     """
@@ -280,10 +314,6 @@ def main():
         xListp.append(arrGen)
 
     xList = np.squeeze(np.array(xList)).T
-
-
-
-
     
     xListp = np.squeeze(np.array(xListp)).T
 
@@ -312,7 +342,11 @@ def main():
     print("Theoretical Eigenvalues:\n", covEigenValues(covEmpirical))
     print("Frobenius Norm:\n", calcFrobeniusNorm(covTheoretical, covEmpirical))
 
-    #r = pr.R()
+    print("Getting a working R instance")
+    r = getRunningR()
+    print("Calculating KS Test")
+    KS = calculateKSTest(r, xList)
+    print(KS)
 
 
 
