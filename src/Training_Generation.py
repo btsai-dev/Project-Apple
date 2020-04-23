@@ -73,8 +73,10 @@ def calculateKSTest(r, dataset):
     r.assign('dataset', dataset)
     r.assign('columns', dataset.shape[1])
     print("Calculating, please wait.")
-    print(r('result <- KStest(object=dataset, group=c( rep(1,columns/2),rep(2,columns/2) ))'))
-    return r.get('result')
+    print(r('result <- KStest(object=dataset, group=c( rep(1,columns/2),rep(2,columns/2) ), pvalue.only=FALSE)'))
+    print(r('result$p.value'))
+    print(r('result$statistic'))
+    return r.get('result$p.value'), r.get('result$statistic')
 
 
 def generateIndependentFollowing(mean, variance, rows, columns):
@@ -295,17 +297,16 @@ def main():
     # Number of dimensions
     D = 2
     L = 1
-    N = 1000
+    N = 200
 
     Sigma = generateSigma(D)
     A = generateA(D, L)
 
     xList = []
 
-    covTheoretical = theoreticalCovMatrix(A, Sigma)
     # Come up with estimate of covariance matrix and mean
 
-    xListp = []
+    
 
     # Generate for each n value
     for n in range(N):
@@ -319,6 +320,8 @@ def main():
 
     covEmpirical = empiricalCovMatrix(xList)
     covMean = np.reshape(getMeanVector(xList), newshape=(D,))
+
+    xListp = []
     print(covMean)
     for n in range(N):
         arrGen = np.random.multivariate_normal(mean=covMean, cov=covEmpirical)  
@@ -326,10 +329,25 @@ def main():
 
     
     xListp = np.squeeze(np.array(xListp)).T
-    xListc = np.concatenate((xList, xListp), axis=1)
-    # print(xListp)
-    print(xListc)
     
+
+    # print(xListp)
+    # print(xListc)
+    
+    # Generate theoretical data from zero mean and cov (A * A.T + sigma_Z)
+    xListn = []
+    covTheoretical = theoreticalCovMatrix(A, Sigma)
+    for n in range(N):
+        arrGen = np.random.multivariate_normal(mean=np.zeros(shape=(D,)), cov=covTheoretical)
+        xListn.append(arrGen)
+    xListn = np.squeeze(np.array(xListn)).T
+        
+    print("Empirical: ", xListn)
+    print("Theoretical: ", xListp)
+                                               
+    xList_Em_Th = np.concatenate( (xListn, xListp), axis=1 )
+    xList_Em_Ay = np.concatenate( (xListn, xList), axis=1 )
+    xList_Th_Ay = np.concatenate( (xListp, xList), axis=1 )
 
     if plotting:
         if D == 2:
@@ -357,8 +375,17 @@ def main():
     print("Getting a working R instance")
     r = getRunningR()
     print("Calculating KS Test")
-    KS = calculateKSTest(r, xListc)
-    print(KS)
+    KS_pvalueET, KS_statisticET = calculateKSTest(r, xList_Em_Th)
+    KS_pvalueEA, KS_statisticEA = calculateKSTest(r, xList_Em_Ay)
+    KS_pvalueTA, KS_statisticTA = calculateKSTest(r, xList_Th_Ay)
+    print("KS p-value for Empirical and Theoretical:", KS_pvalueET)
+    print("Test statistic for Empirical and Theoretical:", KS_statisticET)
+    print("KS p-value for Empirical and AY+Z:", KS_pvalueEA)
+    print("Test statistic for Empirical and AY+Z:", KS_statisticEA)
+    print("KS p-value for AY+Z and Theoretical:", KS_pvalueTA)  
+    print("Test statistic for AY+Z and Theoretical:", KS_statisticTA)
+    
+    
 
 
 
