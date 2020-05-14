@@ -10,21 +10,22 @@ Currently, only the data generation step is being worked on. A working Variation
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
 
 ### Prerequisites
+
 #### Tensorflow
 Used for machine learning.
-```
+```console
 python -m pip install --user tensorflow
 ```
 #### Matplotlib
 Used for data visualization.
-```
+```console
 python -m pip install --user matplotlib
 ```
 Further installation details can be found [here](https://matplotlib.org/users/installing.html).
 
 #### Numpy
 Used for scientific computing.
-```
+```console
 python -m pip install --user numpy
 ```
 
@@ -53,11 +54,11 @@ python3 VAE_Execution.py
 The program can also be run in an IDLE environment.
 
 
-## Built With
+## Additional Requirements
 
-* [Python](https://www.python.org/doc/) - Primary Programming Language
+* [Python](https://www.python.org/doc/) - Programming Language
 * [Tensorflow 2](https://www.tensorflow.org/) - AI Framework
-* [R](https://www.r-project.org/) - Additional Statistical Computing Language
+* [R](https://www.r-project.org/) - Statistical Computing Language
 
 ## Papers
 * **Algebraic Properties of Wyner Common Information Solution under Graphical Constraints** - *Related Paper* - [https://arxiv.org/abs/2001.02712](https://arxiv.org/abs/2001.02712)
