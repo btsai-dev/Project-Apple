@@ -1,7 +1,7 @@
 
 # Project Apple
 
-Project Apple is a Variational Autoencoder created in relation to a 
+Project Apple is a Variational Autoencoder created in support of [this paper](https://arxiv.org/abs/1901.06466). Currently, only the data generation step has been reached. A working Variational Autoencoder has not been implemented.
 
 ## Getting Started
 
