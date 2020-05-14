@@ -36,7 +36,7 @@ python -m pip install --user pyper
 
 Further installation details can be found [here](https://buildmedia.readthedocs.org/media/pdf/pyper/latest/pyper.pdf).
 
-### Installing
+### Installing and Running
 
 - Clone the github repository
 ```console
@@ -50,6 +50,8 @@ python3 Training_Generation.py
 ```console
 python3 VAE_Execution.py
 ```
+The program can also be run in an IDLE environment.
+
 
 ## Built With
 
