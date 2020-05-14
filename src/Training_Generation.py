@@ -5,9 +5,12 @@
     PART 1: GENERATION
     
     We generate N Gaussian vectors of dimension D whose mean vector is zero,
-    and covariance matrix is A * A.T + Σz, where Σz is a diagonal matrix
+    and covariance matrix is A * A.T + ΣZ, where ΣZ is a diagonal matrix
     whose diagonal entries are σ(z,i)².
+    
 
+    GENERATION TYPE ALPHA
+    
     The Gaussian vectors are created from the formula X = A*Y+Z.
         - X is the Gaussian Vector (size D,1) to be generated
         
@@ -28,6 +31,33 @@
     Notes:
         - L << D: The latent vector size should be much smaller than the size
             of the explicit vector size.
+            
+
+    GENERATION TYPE BRAVO
+
+    The covariance matrix and vector mean of the data generated from GENERATION
+    TYPE ALPHA are computed. A new set of data is generated from the covariance
+    matrix and vector mean.
+
+
+    GENERATION TYPE CHARLIE
+
+    The covariance matrix is computed from A * A.T + Σz as stated above. A new
+    set of data is generated from this analytically-derived covariance matrix
+    and a zero vector mean.
+
+
+    PART 2: COMPARISONS
+
+    The Frobenius Norm can be used to compare covariance matrices, and R
+    integration was implemented to utilize a multivariate Kolmogorov-Smirnov
+    Test of Means. Online documentation is outdated, so details on the function
+    implementation should be found by running help(KStest) or ?KStest in the
+    R interactive environment.
+
+    Only the multivariate KS Test of Means requires the downloading and the
+    installation of the R language on your system. The Frobenius Norm does not
+    require the R language. 
 """
 
 # Import necessary modules
@@ -43,40 +73,53 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.stats import gaussian_kde as kde
 
 
+# Global constants
+PLOTTING = True
+R_INTEGRATION = False
+
+
 def getRunningR():
-    r = None
-    try:
-        import pyper as pr
-        r = pr.R()
-        r.has_numpy = True
-        r.has_pandas = False
-        r.run('if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")')
-        r('BiocManager::install("GSAR")')
-        r('library(GSAR)')
-        r('library(MASS)')
-        print("Loaded libraries")
-        return r
-    except ImportError:
-        print("Import error, likely pyper not installed.")
-        traceback.print_exc()
-    except:
-        print("Some other error.")
-        traceback.print_exc()
-    finally:
-        return r
+    if R_INTEGRATION:
+        r = None
+        try:
+            import pyper as pr
+            r = pr.R()
+            r.has_numpy = True
+            r.has_pandas = False
+            r.run('if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")')
+            r('BiocManager::install("GSAR")')
+            r('library(GSAR)')
+            r('library(MASS)')
+            print("Loaded libraries")
+            return r
+        except ImportError:
+            print("Import error, likely pyper not installed.")
+            traceback.print_exc()
+        except:
+            print("Some other error.")
+            traceback.print_exc()
+        finally:
+            return r
+    else:
+        print("R_INTEGRATION is set to false.")
+        return None
     
 
 def calculateKSTest(r, dataset):
-    # print(dataset)
-    # print(dataset.shape[0])
-    # print(dataset.shape[1])
-    r.assign('dataset', dataset)
-    r.assign('columns', dataset.shape[1])
-    print("Calculating, please wait.")
-    print(r('result <- KStest(object=dataset, group=c( rep(1,columns/2),rep(2,columns/2) ), pvalue.only=FALSE)'))
-    print(r('result$p.value'))
-    print(r('result$statistic'))
-    return r.get('result$p.value'), r.get('result$statistic')
+    if R_INTEGRATION:
+        # print(dataset)
+        # print(dataset.shape[0])
+        # print(dataset.shape[1])
+        r.assign('dataset', dataset)
+        r.assign('columns', dataset.shape[1])
+        print("Calculating, please wait.")
+        print(r('result <- KStest(object=dataset, group=c( rep(1,columns/2),rep(2,columns/2) ), pvalue.only=FALSE)'))
+        print(r('result$p.value'))
+        print(r('result$statistic'))
+        return r.get('result$p.value'), r.get('result$statistic')
+    else:
+        print("R_INTEGRATION is set to false.")
+        return None
 
 
 def generateIndependentFollowing(mean, variance, rows, columns):
@@ -285,6 +328,67 @@ def getMeanVector(matrix):
     return np.mean(matrix, axis=1)
 
 
+def resultsAlpha(Sigma, A, D, L, N):
+    """
+    Generates reuslts according to the definition described in GENERATION TYPE ALPHA.
+    :param Sigma:
+    :param A:
+    :param D: Input and output dimensions
+    :param L: Latent dimensions
+    :param N: Number of realizations
+    :return: Numpy array
+    """
+    
+
+    listA = []
+
+    # Generate for each n value
+    for n in range(N):
+        Z = generateZ(Sigma)
+        Y = generateY(L)
+        X = np.dot(A, Y) + Z
+        listA.append(X)
+        
+    listA = np.squeeze(np.array(listA)).T
+    return listA
+
+
+def resultsBravo(listA, D, N):
+    """
+    Generates reuslts according to the definition described in GENERATION TYPE BRAVO.
+    :param listA: Data generated according to GENERATION TYPE ALPHA
+    :param D: Input and output dimensions
+    :param N: Number of realizations
+    :return: Numpy array
+    """
+    # Derive covariance matrix and vector mean from GENERATION ALPHA
+    covEmpirical = empiricalCovMatrix(listA)
+    covMean = np.reshape(getMeanVector(listA), newshape=(D,))
+    listB = []
+    for n in range(N):
+        arrGen = np.random.multivariate_normal(mean=covMean, cov=covEmpirical)  
+        listB.append(arrGen)
+    listB = np.squeeze(np.array(listB)).T
+    return listB
+
+
+def resultsCharlie(Sigma, A, D, N):
+    """
+    Generates reuslts according to the definition described in GENERATION TYPE CHARLIE.
+    :param Sigma:
+    :param A:
+    :param D: Input and output dimensions
+    :param N: Number of realizations
+    :return: Numpy array
+    """
+    listC = []
+    covTheoretical = theoreticalCovMatrix(A, Sigma)
+    for n in range(N):
+        arrGen = np.random.multivariate_normal(mean=np.zeros(shape=(D,)), cov=covTheoretical)
+        listC.append(arrGen)
+    listC = np.squeeze(np.array(listC)).T
+    return listC
+
 def main():
     # Seed all values to zero
     random.seed(0)
@@ -292,98 +396,66 @@ def main():
 
 
     # Debugging Parameters
-    plotting = False
+    
+    # Enables or Disables R integration
+    
+    
 
     # Number of dimensions
     D = 2
     L = 1
-    N = 200
+    N = 500
 
     Sigma = generateSigma(D)
     A = generateA(D, L)
 
-    xList = []
-
-    # Come up with estimate of covariance matrix and mean
-
+    listA = resultsAlpha(Sigma, A, D, L, N)
+    listB = resultsBravo(listA, D, N)
+    listC = resultsCharlie(Sigma, A, D, N)
     
-
-    # Generate for each n value
-    for n in range(N):
-        Z = generateZ(Sigma)
-        Y = generateY(L)
-        X = np.dot(A, Y) + Z
-        xList.append(X)
-        
-    xList = np.squeeze(np.array(xList)).T
-    # print(xList)
-
-    covEmpirical = empiricalCovMatrix(xList)
-    covMean = np.reshape(getMeanVector(xList), newshape=(D,))
-
-    xListp = []
-    print(covMean)
-    for n in range(N):
-        arrGen = np.random.multivariate_normal(mean=covMean, cov=covEmpirical)  
-        xListp.append(arrGen)
-
-    
-    xListp = np.squeeze(np.array(xListp)).T
-    
-
-    # print(xListp)
-    # print(xListc)
     
     # Generate theoretical data from zero mean and cov (A * A.T + sigma_Z)
-    xListn = []
-    covTheoretical = theoreticalCovMatrix(A, Sigma)
-    for n in range(N):
-        arrGen = np.random.multivariate_normal(mean=np.zeros(shape=(D,)), cov=covTheoretical)
-        xListn.append(arrGen)
-    xListn = np.squeeze(np.array(xListn)).T
-        
-    print("Empirical: ", xListn)
-    print("Theoretical: ", xListp)
-                                               
-    xList_Em_Th = np.concatenate( (xListn, xListp), axis=1 )
-    xList_Em_Ay = np.concatenate( (xListn, xList), axis=1 )
-    xList_Th_Ay = np.concatenate( (xListp, xList), axis=1 )
 
-    if plotting:
+    if PLOTTING:
         if D == 2:
-            plotDensity2D(xList, title="Empirical 2D Plotting")
+            plotDensity2D(listA, title="Alpha Plotting")
+            plotDensity2D(listB, title="Bravo Plotting")
+            plotDensity2D(listC, title="Charlie Plotting")
             # plotHistogram2D(xList)
             # plotHistograms(xList)
 
-            plotDensity2D(xListp, title="Generated from Covariance Matrix")
-            # plotHistograms(xListp)
-
         if D == 3:
-            plotDensity3D(xList, title="Empirical 3D Plotting")
+            plotDensity3D(listA, title="Alpha Plotting")
+            plotDensity3D(listB, title="Bravo Plotting")
+            plotDensity3D(listC, title="Charlie Plotting")
             # plotHistograms(xList)
-            plotDensity3D(xListp, title="Generated from Covariance Matrix")
+            # plotDensity3D(xListp, title="Generated from Covariance Matrix")
             # plotHistograms(xListp)
 
-    print("Theoretical Cov matrix:\n", covTheoretical)
-    print("Empirical Cov matrix:\n", covEmpirical)
-    print("Theoretical Angle (Deg):\n", getRotationFromCov(covTheoretical, radian=False))
-    print("Empirical Angle (Deg):\n", getRotationFromCov(covEmpirical, radian=False))
-    print("Theoretical Eigenvalues:\n", covEigenValues(covTheoretical))
-    print("Theoretical Eigenvalues:\n", covEigenValues(covEmpirical))
-    print("Frobenius Norm:\n", calcFrobeniusNorm(covTheoretical, covEmpirical))
+#    print("Theoretical Cov matrix:\n", covTheoretical)
+#    print("Empirical Cov matrix:\n", covEmpirical)
+#    print("Theoretical Angle (Deg):\n", getRotationFromCov(covTheoretical, radian=False))
+#    print("Empirical Angle (Deg):\n", getRotationFromCov(covEmpirical, radian=False))
+#    print("Theoretical Eigenvalues:\n", covEigenValues(covTheoretical))
+#    print("Theoretical Eigenvalues:\n", covEigenValues(covEmpirical))
+#    print("Frobenius Norm:\n", calcFrobeniusNorm(covTheoretical, covEmpirical))
 
-    print("Getting a working R instance")
-    r = getRunningR()
-    print("Calculating KS Test")
-    KS_pvalueET, KS_statisticET = calculateKSTest(r, xList_Em_Th)
-    KS_pvalueEA, KS_statisticEA = calculateKSTest(r, xList_Em_Ay)
-    KS_pvalueTA, KS_statisticTA = calculateKSTest(r, xList_Th_Ay)
-    print("KS p-value for Empirical and Theoretical:", KS_pvalueET)
-    print("Test statistic for Empirical and Theoretical:", KS_statisticET)
-    print("KS p-value for Empirical and AY+Z:", KS_pvalueEA)
-    print("Test statistic for Empirical and AY+Z:", KS_statisticEA)
-    print("KS p-value for AY+Z and Theoretical:", KS_pvalueTA)  
-    print("Test statistic for AY+Z and Theoretical:", KS_statisticTA)
+    if R_INTEGRATION:
+        xList_Em_Th = np.concatenate( (xListn, xListp), axis=1 )
+        xList_Em_Ay = np.concatenate( (xListn, xList), axis=1 )
+        xList_Th_Ay = np.concatenate( (xListp, xList), axis=1 )
+        print("Getting a working R instance")
+        r = getRunningR()
+        print("Calculating KS Test")
+        KS_pvalueET, KS_statisticET = calculateKSTest(r, xList_Em_Th)
+        KS_pvalueEA, KS_statisticEA = calculateKSTest(r, xList_Em_Ay)
+        KS_pvalueTA, KS_statisticTA = calculateKSTest(r, xList_Th_Ay)
+        print("KS p-value for Empirical and Theoretical:", KS_pvalueET)
+        print("Test statistic for Empirical and Theoretical:", KS_statisticET)
+        print("KS p-value for Empirical and AY+Z:", KS_pvalueEA)
+        print("Test statistic for Empirical and AY+Z:", KS_statisticEA)
+        print("KS p-value for AY+Z and Theoretical:", KS_pvalueTA)  
+        print("Test statistic for AY+Z and Theoretical:", KS_statisticTA)
     
     
 
