@@ -1,7 +1,7 @@
 
 # Project Apple
 
-Project Apple is a Variational Autoencoder created in support of [this paper](https://arxiv.org/abs/1901.06466). Currently, only the data generation step has been reached. A working Variational Autoencoder has not been implemented.
+Project Apple is a Variational Autoencoder created in support of [this paper](https://arxiv.org/abs/1901.06466). Currently, only the data generation step has been reached. A working Variational Autoencoder has not been implemented. A prototype default Variational Autoencoder can be found in the src/Legacy Code folder (note that it is the standard Variational Autoencoder to generate handwritten images from the MNIST database).
 
 ## Getting Started
 
